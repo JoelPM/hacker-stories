@@ -39,9 +39,34 @@ const initialStories = [
   },
 ];
 
+const getAsyncStories = () =>
+  new Promise((resolve) => {
+    setTimeout(
+      () => resolve({ data: { stories: initialStories } }),
+      2000
+    );
+  });
+
 const App = () => {
 
-  const [stories, setStories] = React.useState(initialStories);
+  const [stories, setStories] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isError, setIsError] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsLoading(true);
+    setIsError(false);
+
+    getAsyncStories().then(result => {
+      setStories(result.data.stories);
+      setIsLoading(false);
+      console.log("Load returned. " + isLoading);
+    }).catch((error) => {
+      console.log("Got error " + error);
+      setIsError(true);
+    });
+  });
+
   const [searchTerm, setSearchTerm] = useStorageState('search', 'React');
 
   const handleSearch = (event) => {
@@ -69,7 +94,12 @@ const App = () => {
         <strong>Search:</strong>
       </InputWithLabel>
       <hr />
-      <List list={searchedStories} onRemoveItem={handleRemoveStory}/>
+      {isError && <p>Something went wrong (see the console).</p>}
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        <List list={searchedStories} onRemoveItem={handleRemoveStory}/>
+      )}
     </div>
   );
 };
