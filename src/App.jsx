@@ -47,6 +47,14 @@ const getAsyncStories = () =>
     )
   );
 
+const storiesReducer = (state, action) => {
+  if (action.type === 'SET_STORIES') {
+    return action.payload;
+  } else {
+    throw new Error();
+  }
+};
+
 const App = () => {
   const [searchTerm, setSearchTerm] = useStorageState('search', 'React');
 
