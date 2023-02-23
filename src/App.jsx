@@ -1,4 +1,5 @@
 import * as React from 'react';
+import axios from 'axios';
 
 const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query=';
 
@@ -30,6 +31,8 @@ const storiesReducer = (state, action) => {
         data: action.payload,
       };
     case 'STORIES_FETCH_FAILURE':
+      console.log('Error:');
+      console.log(action.payload);
       return {
         ...state,
         isLoading: false,
@@ -50,26 +53,38 @@ const storiesReducer = (state, action) => {
 const App = () => {
   const [searchTerm, setSearchTerm] = useStorageState('search', 'React');
 
+  const [url, setUrl] = React.useState(`${API_ENDPOINT}${searchTerm}`);
+
   const [stories, dispatchStories] = React.useReducer(
     storiesReducer,
     { data: [], isLoading: false, isError: false }
   );
 
-  React.useEffect(() => {
-    if (!searchTerm) return;
+  const handleSearchInput = (event) => {
+    setSearchTerm(event.target.value);
+  };
 
+  const handleSearchSubmit = () => {
+    setUrl(`${API_ENDPOINT}${searchTerm}`);
+  }
+
+  const handleFetchStories = React.useCallback(() => {
     dispatchStories({ type: 'STORIES_FETCH_INIT' });
 
-    fetch(`${API_ENDPOINT}${searchTerm}`)
-      .then((response) => response.json())
+    axios
+      .get(url)
       .then(result => {
         dispatchStories({
           type: 'STORIES_FETCH_SUCCESS',
-          payload: result.hits,
+          payload: result.data.hits,
         });
       })
       .catch((err) => dispatchStories({ type: 'STORIES_FETCH_FAILURE', payload: err}));
-  }, [searchTerm]);
+  }, [url]);
+
+  React.useEffect(() => {
+    handleFetchStories();
+  }, [handleFetchStories]);
 
 
   const handleSearch = (event) => {
@@ -90,9 +105,16 @@ const App = () => {
         id="search"
         value={searchTerm}
         isFocused
-        onInputChange={handleSearch}>
+        onInputChange={handleSearchInput}>
         <strong>Search:</strong>
       </InputWithLabel>
+      <button
+        type="button"
+        disabled={!searchTerm}
+        onClick={handleSearchSubmit}
+      >
+        Submit
+      </button>
       <hr />
       {stories.isError && <p>Something went wrong (see the console).</p>}
       {stories.isLoading ? (
